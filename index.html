@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>File Uploader</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    h1 {
+      margin-bottom: 1rem;
+    }
+    .upload-form {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .success-message {
+      color: green;
+      margin-bottom: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>File Upload</h1>
+
+  <form enctype="multipart/form-data" action="http://localhost:8080/upload" method="post" class="upload-form">
+    <input type="file" name="uploadFile" required />
+    <input type="submit" value="Upload File" />
+  </form>
+
+  <div class="success-message" hidden>
+    Upload Successful!
+  </div>
+
+  <br> <button onclick="window.location.href='/files/'">Go to Files</button>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const uploadSuccess = urlParams.get("uploadSuccess");
+
+    if (uploadSuccess) {
+      const successMessage = document.querySelector(".success-message");
+      successMessage.hidden = false;
+    }
+  </script>
+</body>
+</html>
