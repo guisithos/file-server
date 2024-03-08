@@ -28,7 +28,7 @@ func main() {
 func uploadFileHandler() http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "GET" {
-			t, _ := template.ParseFiles("upload.gtpl")
+			t, _ := template.ParseFiles("index.html")
 			t.Execute(w, nil)
 			return
 		}
