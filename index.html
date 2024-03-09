@@ -38,16 +38,58 @@
     Upload Successful!
   </div>
 
-  <br> <button onclick="window.location.href='/files/'">Go to Files</button>
+  <h2>Uploaded Files</h2>
+
+  <ul id="fileList">
+    </ul>
+
+  <br>
+  <button onclick="window.location.href='/files/'">Go to Files</button>
+
+  <form id="deleteForm" method="post" action="/delete" hidden>
+    <input type="hidden" name="fileName" id="deleteFilename">
+  </form>
 
   <script>
+    const fileList = document.getElementById("fileList");
+    const deleteForm = document.getElementById("deleteForm");
+    const deleteFilenameInput = document.getElementById("deleteFilename");
+
+
+    function updateFileList() {
+      fetch("/fileList")
+        .then(response => response.json())
+        .then(files => {
+          fileList.innerHTML = ""; 
+
+          files.forEach(fileName => {
+            const listItem = document.createElement("li");
+            listItem.textContent = fileName;
+
+            // Add delete button
+            const deleteButton = document.createElement("button");
+            deleteButton.textContent = "Delete";
+            deleteButton.addEventListener("click", () => {
+              deleteFilenameInput.value = fileName;
+              deleteForm.submit();
+            });
+
+            listItem.appendChild(deleteButton);
+            fileList.appendChild(listItem);
+          });
+        })
+        .catch(error => console.error("Error fetching file list:", error));
+
+    updateFileList(); 
+
     const urlParams = new URLSearchParams(window.location.search);
     const uploadSuccess = urlParams.get("uploadSuccess");
 
     if (uploadSuccess) {
       const successMessage = document.querySelector(".success-message");
       successMessage.hidden = false;
-    }
+    } }
   </script>
 </body>
 </html>
+    
