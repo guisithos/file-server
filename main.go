@@ -37,7 +37,7 @@ func uploadFileHandler() http.HandlerFunc {
 			renderError(w, "CANT_PARSE_FORM", http.StatusInternalServerError)
 			return
 		}
-    
+
 		file, fileHeader, err := r.FormFile("uploadFile")
 		if err != nil {
 			renderError(w, "INVALID_FILE", http.StatusBadRequest)
@@ -55,7 +55,7 @@ func uploadFileHandler() http.HandlerFunc {
 			renderError(w, "INVALID_FILE", http.StatusBadRequest)
 			return
 		}
-    
+
 		detectedFileType := http.DetectContentType(fileBytes)
 		switch detectedFileType {
 		case "image/jpeg", "image/jpg":
@@ -91,6 +91,103 @@ func uploadFileHandler() http.HandlerFunc {
 	})
 }
 
+func deleteFileHandler() http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			fmt.Fprintf(w, "Delete request requires POST method")
+			return
+		}
+
+		fileName := r.FormValue("fileName")
+		if fileName == "" {
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprintf(w, "Missing filename parameter in delete request")
+			return
+		}
+
+		filePath := filepath.Join(uploadPath, fileName)
+		if _, err := os.Stat(filePath); os.IsNotExist(err) {
+			w.WriteHeader(http.StatusNotFound)
+			fmt.Fprintf(w, "File not found: %s", fileName)
+			return
+		}
+
+		err := os.Remove(filePath)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprintf(w, "Failed to delete file: %v", err)
+			return
+		}
+
+		fmt.Fprintf(w, "File deleted successfully: %s", fileName)
+	})
+}
+
+func updateFileHandler() http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			fmt.Fprintf(w, "Update request requires POST method")
+			return
+		}
+
+		fileName := r.FormValue("fileName")
+		if fileName == "" {
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprintf(w, "Missing filename parameter in update request")
+			return
+		}
+
+		filePath := filepath.Join(uploadPath, fileName)
+		if _, err := os.Stat(filePath); os.IsNotExist(err) {
+			w.WriteHeader(http.StatusNotFound)
+			fmt.Fprintf(w, "File not found: %s", fileName)
+			return
+		}
+
+		file, fileHeader, err := r.FormFile("uploadFile")
+		if err != nil {
+			renderError(w, "INVALID_FILE", http.StatusBadRequest)
+			return
+		}
+		defer file.Close()
+		fileSize := fileHeader.Size
+		fmt.Printf("File size (bytes): %v\n", fileSize)
+		if fileSize > maxUploadSize {
+			renderError(w, "FILE_TOO_BIG", http.StatusBadRequest)
+			return
+		}
+		fileBytes, err := ioutil.ReadAll(file)
+		if err != nil {
+			renderError(w, "INVALID_FILE", http.StatusBadRequest)
+			return
+		}
+
+		detectedFileType := http.DetectContentType(fileBytes)
+		switch detectedFileType {
+		case "image/jpeg", "image/jpg":
+		case "image/gif", "image/png":
+		case "application/pdf":
+			break
+		default:
+			renderError(w, "INVALID_FILE_TYPE", http.StatusBadRequest)
+			return
+		}
+
+		newFile, err := os.Create(filePath)
+		if err != nil {
+			renderError(w, "CANT_WRITE_FILE", http.StatusInternalServerError)
+			return
+		}
+		defer newFile.Close()
+		if _, err := newFile.Write(fileBytes); err != nil || newFile.Close() != nil {
+			renderError(w, "CANT_WRITE_FILE", http.StatusInternalServerError)
+			return
+		}
+		w.Write([]byte(fmt.Sprintf("SUCCESS - file %v updated", fileName)))
+	})
+}
 func renderError(w http.ResponseWriter, message string, statusCode int) {
 	w.WriteHeader(statusCode)
 	w.Write([]byte(message))
